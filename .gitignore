@@ -1,0 +1,8 @@
+*.o
+*.hex
+*.d
+*.a
+*/Debug/
+*/Release/
+*/bin
+*/obj
