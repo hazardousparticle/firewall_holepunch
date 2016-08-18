@@ -14,7 +14,7 @@
 
 #include <cstring>
 
-//socket listen time out (sec)
+//socket listen time out (usec)
 #define SOCKET_TIMEOUT 100000
 
 // NAT-PMP constants

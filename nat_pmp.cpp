@@ -1,5 +1,6 @@
 #include "nat_pmp.h"
 #include <iostream>
+#include <errno.h>
 
 using namespace std;
 // create the NAT-PMP'er
@@ -19,24 +20,28 @@ nat_pmp::nat_pmp(bool UDPForward , unsigned int LifeTime)
 
     local_addr.sin_family = AF_INET;
 	local_addr.sin_addr.s_addr = INADDR_ANY;
-	local_addr.sin_port = 0;
+	local_addr.sin_port = htons(0);
 
 	unsigned int szLocalAddr = sizeof(local_addr);
 
 	//bind for responses
-	bind(PMP_socket, (sockaddr*)&local_addr, szLocalAddr);
+	if (bind(PMP_socket, (sockaddr*)&local_addr, szLocalAddr) < 0)
+    {
+        perror("Error");
+
+    }
 	getsockname(PMP_socket, (sockaddr*)&local_addr, &szLocalAddr);
 
 
 	//set the timeout, socket will die if nothing for this long
-	/*
+
 	timeval tv;
 	tv.tv_sec = 0;
 	tv.tv_usec = SOCKET_TIMEOUT;
 		if (setsockopt(PMP_socket, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) {
 	    perror("Error Setting options on the socket");
 	}
-    */
+
 	this->PMP_socket = PMP_socket;
 
 	// get the ephemeral port assigned to us
@@ -67,12 +72,16 @@ int nat_pmp::map_port(uint16_t internal, uint16_t external)
 
 	const char* get_gateway_cmd = "route -n | grep 'UG[ \t]' | awk '{print $2}' | head -n1";
 
+
+    // TODO: move the get gateway stuff into a new file
+    // TODO: replace gateway with SSDP to discover gateway
 	FILE* fp = popen(get_gateway_cmd, "r");
 	if (!fgets(gateway,sizeof(gateway) -1,fp))
     {
         return -1;
         //an error occurred
     }
+    pclose(fp);
 
     for (unsigned int i = 0; i < sizeof(gateway); i++)
     {
@@ -145,10 +154,30 @@ int nat_pmp::map_port(uint16_t internal, uint16_t external)
 
     // get the response
     uint8_t rawResponse[16];
-    status = recvfrom(this->PMP_socket, rawResponse, sizeof(rawResponse), 0, (sockaddr *) &response_addr, &szSOCK_ADDR);
 
+    while (true)
+    {
+        status = recvfrom(this->PMP_socket, rawResponse, sizeof(rawResponse), 0, (sockaddr *) &response_addr, &szSOCK_ADDR);
 
-    cout << "Response from " << inet_ntoa(response_addr.sin_addr) << ": " << endl;
+        if (status < 0)
+        {
+            if (errno ==  EAGAIN|| errno == EWOULDBLOCK)
+            {
+                continue;
+            }
+        }
+
+        char* response_ip = inet_ntoa(response_addr.sin_addr);
+        cout << "Response from " << response_ip << ": " << endl;
+
+        if (!strncmp(gateway, response_ip, sizeof(gateway)))
+        {
+            break;
+        }
+
+        // wrong ip sends a message
+        cout << "    Ignored." << endl;
+    }
 
     if (status < 0)
     {
@@ -197,9 +226,6 @@ int nat_pmp::map_port(uint16_t internal, uint16_t external)
 
     response.version = rawResponse[0];
     cout << "    Protocol version: " << to_string(response.version) << endl;
-
-
-
 
     memcpy(&response.epoch, rawResponse + 4, 4);
     response.epoch = ntohl(response.epoch);
