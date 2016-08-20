@@ -6,11 +6,13 @@ using namespace std;
 // create the NAT-PMP'er
 // should it forward UDP
 // how long should the port be forwarded for
-nat_pmp::nat_pmp(bool UDPForward , unsigned int LifeTime)
+nat_pmp::nat_pmp(const char* gateway, bool UDPForward, unsigned int LifeTime )
 {
     // set the options, udp forward mode and lifetime of the forward, ie forwarding expires after this time in secs
     this->UDPForward = UDPForward;
     this->PortLifeTime = LifeTime;
+
+    this->gateway = (char *)gateway;
 
     // set up the socket to listen for a response from the NAT-PMP server
     int PMP_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -67,42 +69,12 @@ int nat_pmp::map_port(uint16_t internal, uint16_t external)
 {
     int status = 0;
 
-    //we need to send to the gateway. but we don't know it. get it
-    char gateway[16] = {0};//new char[16];
-
-	const char* get_gateway_cmd = "route -n | grep 'UG[ \t]' | awk '{print $2}' | head -n1";
-
-
-    // TODO: move the get gateway stuff into a new file
-    // TODO: replace gateway with SSDP to discover gateway
-	FILE* fp = popen(get_gateway_cmd, "r");
-	if (!fgets(gateway,sizeof(gateway) -1,fp))
-    {
-        return -1;
-        //an error occurred
-    }
-    pclose(fp);
-
-    for (unsigned int i = 0; i < sizeof(gateway); i++)
-    {
-        if (gateway[i] == '\n')
-        {
-            gateway[i] = 0;
-            break;
-        }
-    }
-
-
 	// address to send the NAT-PMP packet
     sockaddr_in gateway_addr;
     gateway_addr.sin_family = AF_INET;
 
 	//add ip to the socket
-	inet_pton(AF_INET, gateway, &(gateway_addr.sin_addr));
-
-	cout << "Gateway: " << gateway << endl;
-
-    //delete gateway;
+	inet_pton(AF_INET, this->gateway, &(gateway_addr.sin_addr));
 
     // add the port to the socket
     gateway_addr.sin_port = htons(NAT_PMP_PORT);
@@ -170,7 +142,7 @@ int nat_pmp::map_port(uint16_t internal, uint16_t external)
         char* response_ip = inet_ntoa(response_addr.sin_addr);
         cout << "Response from " << response_ip << ": " << endl;
 
-        if (!strncmp(gateway, response_ip, sizeof(gateway)))
+        if (!strncmp(gateway, response_ip, strlen(gateway)))
         {
             break;
         }
@@ -239,7 +211,7 @@ int nat_pmp::map_port(uint16_t internal, uint16_t external)
     memcpy(&response.externalPort, rawResponse + 10, 2);
     response.externalPort = ntohs(response.externalPort);
 
-    cout << "    Map " << to_string(response.internalPort) << "(internal) to " << to_string(response.externalPort) << "(external)" << endl;
+    cout << "    Map port " << to_string(response.internalPort) << "(internal) to " << to_string(response.externalPort) << "(external)" << endl;
 
     memcpy(&response.lifetime, rawResponse + 12, 4);
     response.lifetime = ntohl(response.lifetime);

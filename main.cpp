@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "nat_pmp.h"
+#include "SSDP_gateway_device.h"
 
 
 using namespace std;
@@ -83,15 +84,19 @@ int main(int argc, const char * argv[])
         usage(argv[0]);
     }
 
+    char* gateway = gatewayAddress();
+
+    cout << "Gateway found: " << gateway << endl;
+
     //numbers are correct do the thing
     nat_pmp *PortMapper;
     if (UDP_mode)
     {
-        PortMapper = new nat_pmp(true);
+        PortMapper = new nat_pmp(gateway, true);
     }
     else
     {
-        PortMapper = new nat_pmp();
+        PortMapper = new nat_pmp(gateway);
     }
 
     int result = PortMapper->map_port(internal_port, external_port);

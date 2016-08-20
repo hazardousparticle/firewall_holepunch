@@ -33,6 +33,12 @@
 			<Add option="-O" />
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="./stringSearch.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="./stringSearch.h" />
+		<Unit filename="SSDP_gateway_device.cpp" />
+		<Unit filename="SSDP_gateway_device.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="nat_pmp.cpp" />
 		<Unit filename="nat_pmp.h" />
