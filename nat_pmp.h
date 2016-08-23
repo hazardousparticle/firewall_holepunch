@@ -2,17 +2,7 @@
 #define NAT_PMP_H
 
 #include <cstdint>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 
-#include <unistd.h>
-
-#include <cstdio>
-#include <cstdlib>
-
-#include <cstring>
 
 //socket listen time out (usec)
 #define SOCKET_TIMEOUT 500000

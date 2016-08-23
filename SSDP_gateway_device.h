@@ -5,9 +5,16 @@
 #define SSDP_PORT 1900
 
 //time out per received ssdp response
-#define SOCKET_TIMEOUT 500000
+//microseconds
+//#define SOCKET_TIMEOUT_US 500000
+//seconds
+#define SOCKET_TIMEOUT_S 3
 
-#define MAX_ATTEMPTS 10
+// maximum times the recvfrom should return
+// returns on time out or received bytes.
+#define MAX_ATTEMPTS 1
+
+// length of the buffer to hold responses from the SSDP requests
 #define MAX_BUF_LEN 500
 
 char* gatewayAddress(void);

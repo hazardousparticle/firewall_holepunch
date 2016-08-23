@@ -22,7 +22,7 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
-					<Add option="-O2" />
+					<Add option="-O3" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -33,15 +33,19 @@
 			<Add option="-O" />
 			<Add option="-Wall" />
 		</Compiler>
-		<Unit filename="./stringSearch.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="./stringSearch.h" />
 		<Unit filename="SSDP_gateway_device.cpp" />
-		<Unit filename="SSDP_gateway_device.h" />
+		<Unit filename="SSDP_gateway_device.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="main.cpp" />
 		<Unit filename="nat_pmp.cpp" />
-		<Unit filename="nat_pmp.h" />
+		<Unit filename="nat_pmp.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="stringSearch.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="stringSearch.h" />
 		<Extensions>
 			<envvars />
 			<code_completion />

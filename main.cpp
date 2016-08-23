@@ -1,10 +1,19 @@
 #include <limits.h>
 #include <libgen.h>
+//#include <unistd.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 
 #include "nat_pmp.h"
 #include "SSDP_gateway_device.h"
 
+
+// SSDP retries, if nothing for so many attempts, retry this many times.
+// Wait x seconds between each
+#define SSDP_SEARCH_RETRY 4
+//#define SSDP_DELAY_BETWEEN_RETRIES 1
 
 using namespace std;
 
@@ -28,7 +37,6 @@ int main(int argc, const char * argv[])
     uint16_t internal_port = 0;
     uint16_t external_port = 0;
     bool UDP_mode = false;
-
 
     //parse arg strings into numbers
     auto StrToUint16 = [](const char * str) -> uint16_t
@@ -84,7 +92,28 @@ int main(int argc, const char * argv[])
         usage(argv[0]);
     }
 
-    char* gateway = gatewayAddress();
+    char* gateway = nullptr;
+
+    for (int i = 0; i < SSDP_SEARCH_RETRY; i++)
+    {
+        gateway = gatewayAddress();
+        if (gateway)
+        {
+            break;
+        }
+        //sleep(SSDP_DELAY_BETWEEN_RETRIES);
+        // already a delay when waiting for a response
+
+        //no answer try again
+    }
+
+    if (!gateway)
+    {
+        // error finding the gateway :(
+        cerr << "Error: No Response from gateway device." << endl;
+        return -1;
+    }
+
 
     cout << "Gateway found: " << gateway << endl;
 

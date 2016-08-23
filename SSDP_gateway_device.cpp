@@ -15,9 +15,6 @@
 
 char* gatewayAddress(void)
 {
-
-    // TODO: known issue fix, firewall blocks receiving SSDP messages
-
     char* gateway = nullptr;
 
     //SSDP socket
@@ -52,12 +49,11 @@ char* gatewayAddress(void)
     bind(ssdp_sock, (sockaddr*)&local_addr, szLocalAddr);
     getsockname(ssdp_sock, (sockaddr*)&local_addr, &szLocalAddr);
 
-
     //set the timeout, socket will die if nothing for this long
 
     timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = SOCKET_TIMEOUT;
+    tv.tv_sec = SOCKET_TIMEOUT_S;
+    tv.tv_usec = 0;//SOCKET_TIMEOUT_US;
     if (setsockopt(ssdp_sock, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0)
     {
         perror("Error");
@@ -88,100 +84,98 @@ char* gatewayAddress(void)
 
     sockaddr_in GatewayDevice;
 
-    // TODO: stop after so many attempts, if too many attempts have occured, use the fallback method
+    // stop after so many attempts, if too many attempts have occurred
+    // TODO: use the fallback method if this fails
     // fallback method is the route command
-    while (true)
+
+    int result = recvfrom(ssdp_sock, RecvBuf, sizeof RecvBuf, 0, (sockaddr *) & GatewayDevice, &szLocalAddr);
+    // receive sockets, and put senders IP in buffer
+
+    if (result >= MAX_BUF_LEN)
     {
-        int result = recvfrom(ssdp_sock, RecvBuf, sizeof RecvBuf, 0, (sockaddr *) & GatewayDevice, &szLocalAddr);
-        // receive sockets, and put senders IP in buffer
-
-        if (result >= MAX_BUF_LEN)
-        {
-            result = MAX_BUF_LEN -1;
-        }
-
-        if (result < 0)
-        {
-            // error receiving from sockets
-            perror("Error");
-            continue;
-        }
-
-        RecvBuf[result] = 0;
-
-        char* response_address = inet_ntoa(GatewayDevice.sin_addr);
-
-        // parse the response and check if it is a gateway
-        int indexStart = findInString("ST: urn:", RecvBuf, 0);
-
-        if (indexStart < 0)
-        {
-            // couldn't find the ST: in the response.
-            continue; //try again
-        }
-
-        // check if the ST: urn: is a gateway
-
-        int indexEnd = findInString(":1\r\n", RecvBuf, indexStart);
-        if (indexEnd < 0)
-        {
-            // couldn't find the ST: in the response.
-            continue; //try again
-        }
-
-        int fieldSize = indexEnd - (indexStart + 8);
-
-        char* field = new char[fieldSize] {0};
-
-        strncpy(field, RecvBuf + indexStart + 8, fieldSize);
-        field[fieldSize] = 0;
-
-
-        if (strncmp(field, "schemas-upnp-org:device:InternetGatewayDevice", 45))
-        {
-            //not a IGD. :(
-            delete field;
-            continue;
-        }
-
-        delete field;
-
-        // parse to get the location
-        indexStart = findInString("LOCATION: http://", RecvBuf, 0);
-
-        if (indexStart < 0)
-        {
-            // couldn't find the ST: in the response.
-            continue; //try again
-        }
-
-        //extract the IP address from the LOCATION Field
-        indexEnd = findInString(":", RecvBuf, indexStart + 17);
-        if (indexEnd < 0)
-        {
-            // couldn't find the : in the response.
-            continue; //try again
-        }
-
-        fieldSize = indexEnd - (indexStart + 17);
-
-        field = new char[fieldSize] {0};
-        strncpy(field, RecvBuf + indexStart + 17, fieldSize);
-        field[fieldSize] = 0;
-
-        if (strcmp(response_address, field))
-        {
-            //ip from packet doesn't match the ip provided in the response
-            continue;
-        }
-
-        delete field;
-
-        // return the gateway
-        gateway = response_address;
-        break;
-
+        result = MAX_BUF_LEN -1;
     }
+
+    if (result < 0)
+    {
+        // error receiving from sockets
+        //perror("Error");
+        return nullptr;
+    }
+
+    RecvBuf[result] = 0;
+
+    char* response_address = inet_ntoa(GatewayDevice.sin_addr);
+
+    // parse the response and check if it is a gateway
+    int indexStart = findInString("ST: urn:", RecvBuf, 0);
+
+    if (indexStart < 0)
+    {
+        // couldn't find the ST: in the response.
+        return nullptr; //try again
+    }
+
+    // check if the ST: urn: is a gateway
+
+    int indexEnd = findInString(":1\r\n", RecvBuf, indexStart);
+    if (indexEnd < 0)
+    {
+        // couldn't find the ST: in the response.
+        return nullptr; //try again
+    }
+
+    int fieldSize = indexEnd - (indexStart + 8);
+
+    char* field = new char[fieldSize] {0};
+
+    strncpy(field, RecvBuf + indexStart + 8, fieldSize);
+    field[fieldSize] = 0;
+
+
+    if (strncmp(field, "schemas-upnp-org:device:InternetGatewayDevice", 45))
+    {
+        //not a IGD. :(
+        delete field;
+        return nullptr;
+    }
+
+    delete field;
+
+    // parse to get the location
+    indexStart = findInString("LOCATION: http://", RecvBuf, 0);
+
+    if (indexStart < 0)
+    {
+        // couldn't find the ST: in the response.
+        return nullptr; //try again
+    }
+
+    //extract the IP address from the LOCATION Field
+    indexEnd = findInString(":", RecvBuf, indexStart + 17);
+    if (indexEnd < 0)
+    {
+        // couldn't find the : in the response.
+        return nullptr; //try again
+    }
+
+    fieldSize = indexEnd - (indexStart + 17);
+
+    field = new char[fieldSize] {0};
+    strncpy(field, RecvBuf + indexStart + 17, fieldSize);
+    field[fieldSize] = 0;
+
+    if (strcmp(response_address, field))
+    {
+        //ip from packet doesn't match the ip provided in the response
+        delete field;
+        return nullptr;
+    }
+
+    delete field;
+
+    // return the gateway
+    gateway = response_address;
 
     close(ssdp_sock);
 

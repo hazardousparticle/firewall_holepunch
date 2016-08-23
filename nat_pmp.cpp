@@ -1,6 +1,20 @@
-#include "nat_pmp.h"
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include <unistd.h>
+
+#include <cstdio>
+#include <cstdlib>
+
+#include <cstring>
 #include <iostream>
 #include <errno.h>
+
+
+#include "nat_pmp.h"
+
 
 using namespace std;
 // create the NAT-PMP'er
