@@ -1,8 +1,7 @@
 *.o
-*.hex
 *.d
 *.a
-*/Debug/
-*/Release/
-*/bin
-*/obj
+bin/
+obj/
+*.layout
+*.depend
