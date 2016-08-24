@@ -78,7 +78,8 @@ char* gatewayAddress(void)
         return gateway;
         //failed to send
     }
-    delete requestPacket;
+    delete[] requestPacket;
+    requestPacket = nullptr;
 
     char RecvBuf[MAX_BUF_LEN];
 
@@ -127,20 +128,20 @@ char* gatewayAddress(void)
 
     int fieldSize = indexEnd - (indexStart + 8);
 
-    char* field = new char[fieldSize] {0};
+    char* field = new char[fieldSize + 1] {0};
 
     strncpy(field, RecvBuf + indexStart + 8, fieldSize);
-    field[fieldSize] = 0;
+    //field[fieldSize] = 0;
 
 
     if (strncmp(field, "schemas-upnp-org:device:InternetGatewayDevice", 45))
     {
         //not a IGD. :(
-        delete field;
+        delete[] field;
         return nullptr;
     }
 
-    delete field;
+    delete[] field;
 
     // parse to get the location
     indexStart = findInString("LOCATION: http://", RecvBuf, 0);
@@ -161,18 +162,17 @@ char* gatewayAddress(void)
 
     fieldSize = indexEnd - (indexStart + 17);
 
-    field = new char[fieldSize] {0};
+    field = new char[fieldSize +1] {0};
     strncpy(field, RecvBuf + indexStart + 17, fieldSize);
-    field[fieldSize] = 0;
 
     if (strcmp(response_address, field))
     {
         //ip from packet doesn't match the ip provided in the response
-        delete field;
+        delete[] field;
         return nullptr;
     }
 
-    delete field;
+    delete[] field;
 
     // return the gateway
     gateway = response_address;

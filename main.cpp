@@ -114,7 +114,6 @@ int main(int argc, const char * argv[])
         return -1;
     }
 
-
     cout << "Gateway found: " << gateway << endl;
 
     //numbers are correct do the thing

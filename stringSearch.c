@@ -15,7 +15,7 @@ int findInString(const char* what, const char* in, int start)
 
     int findLen = strlen(what);
 
-    char* tmpStr = malloc(findLen + 1);
+    char* tmpStr = calloc(findLen + 1, 1);
 
     for (int i = start; i < strlen(in); i++)
     {
@@ -25,8 +25,8 @@ int findInString(const char* what, const char* in, int start)
             //don't compare out of bounds
         }
 
-        memcpy(tmpStr, in +i, findLen);
-        tmpStr[findLen + 1] = 0;
+        memcpy(tmpStr, in + i, findLen);
+        //tmpStr[findLen +1] = 0;
 
         if(!strncmp(what, tmpStr, strlen(what)))
         {
