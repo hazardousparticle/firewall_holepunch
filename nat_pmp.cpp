@@ -126,6 +126,7 @@ int nat_pmp::map_port(uint16_t internal, uint16_t external)
     status = sendto(this->PMP_socket, request, sizeof(RequestPacket), 0, \
     		(sockaddr *)&gateway_addr, sizeof(gateway_addr));
     delete request;
+    request = nullptr;
 
     if (status < 0)
     {

@@ -114,7 +114,7 @@ int main(int argc, const char * argv[])
         return -1;
     }
 
-    cout << "Gateway found: " << gateway << endl;
+    cout << "Gateway address: " << gateway << endl;
 
     //numbers are correct do the thing
     nat_pmp *PortMapper;

@@ -177,6 +177,18 @@ char* gatewayAddress(void)
     // return the gateway
     gateway = response_address;
 
+    // print the type of server
+    indexStart = findInString("SERVER: ", RecvBuf, 0);
+    indexEnd = findInString("\r\n", RecvBuf, indexStart);
+
+    fieldSize = indexEnd - (indexStart + 8);
+    field = new char[fieldSize + 1] {0};
+    strncpy(field, RecvBuf + indexStart + 8, fieldSize);
+
+    printf("Gateway device: %s\n", field);
+    delete[] field;
+    field = nullptr;
+
     close(ssdp_sock);
 
     return gateway;
