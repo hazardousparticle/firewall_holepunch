@@ -5,3 +5,5 @@ bin/
 obj/
 *.layout
 *.depend
+*.cbp
+firewall_holepunch
