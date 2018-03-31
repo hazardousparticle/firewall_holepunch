@@ -54,7 +54,8 @@ nat_pmp::nat_pmp(const char* gateway, bool UDPForward, unsigned int LifeTime )
 	timeval tv;
 	tv.tv_sec = 0;
 	tv.tv_usec = SOCKET_TIMEOUT;
-		if (setsockopt(PMP_socket, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) {
+    if (setsockopt(PMP_socket, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0)
+    {
 	    perror("Error Setting options on the socket");
 	}
 
@@ -142,14 +143,16 @@ int nat_pmp::map_port(uint16_t internal, uint16_t external)
     // get the response
     uint8_t rawResponse[16];
 
-    while (true)
+    for (int i = 0; i < 5; i++ )
     {
         status = recvfrom(this->PMP_socket, rawResponse, sizeof(rawResponse), 0, (sockaddr *) &response_addr, &szSOCK_ADDR);
 
         if (status < 0)
         {
-            if (errno ==  EAGAIN|| errno == EWOULDBLOCK)
+            if (errno ==  EAGAIN || errno == EWOULDBLOCK)
             {
+                cerr << "No response." << endl;
+                status = 1;
                 continue;
             }
         }
@@ -162,7 +165,7 @@ int nat_pmp::map_port(uint16_t internal, uint16_t external)
             break;
         }
 
-        // wrong ip sends a message
+        // wrong IP sent a message
         cout << "    Ignored." << endl;
     }
 

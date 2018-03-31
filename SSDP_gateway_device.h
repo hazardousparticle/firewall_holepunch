@@ -12,7 +12,7 @@
 
 // maximum times the recvfrom should return
 // returns on time out or received bytes.
-#define MAX_ATTEMPTS 1
+#define MAX_ATTEMPTS 3
 
 // length of the buffer to hold responses from the SSDP requests
 #define MAX_BUF_LEN 500

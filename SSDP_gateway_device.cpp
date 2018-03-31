@@ -2,15 +2,13 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
 #include <unistd.h>
-
 #include <cstdio>
 #include <cstdlib>
-
+#include <string>
 #include <cstring>
 #include <errno.h>
-#include "stringSearch.h"
+
 #include "SSDP_gateway_device.h"
 
 char* gatewayAddress(void)
@@ -108,21 +106,23 @@ char* gatewayAddress(void)
 
     char* response_address = inet_ntoa(GatewayDevice.sin_addr);
 
-    // parse the response and check if it is a gateway
-    int indexStart = findInString("ST: urn:", RecvBuf, 0);
+    std::string str(RecvBuf);
 
-    if (indexStart < 0)
+
+    // parse the response and check if it is a gateway
+    int indexStart = str.find("ST: urn:", 0);
+
+    if (indexStart == std::string::npos)
     {
-        // couldn't find the ST: in the response.
+        // couldn't find ST: in the response.
         return nullptr; //try again
     }
 
     // check if the ST: urn: is a gateway
 
-    int indexEnd = findInString(":1\r\n", RecvBuf, indexStart);
-    if (indexEnd < 0)
+    int indexEnd = str.find(":1\r\n", indexStart);
+    if (indexStart == std::string::npos)
     {
-        // couldn't find the ST: in the response.
         return nullptr; //try again
     }
 
@@ -144,25 +144,26 @@ char* gatewayAddress(void)
     delete[] field;
 
     // parse to get the location
-    indexStart = findInString("LOCATION: http://", RecvBuf, 0);
+    indexStart = str.find("LOCATION: http://");
 
-    if (indexStart < 0)
+    if (indexStart == std::string::npos)
     {
-        // couldn't find the ST: in the response.
+        // couldn't find the location field in the response.
         return nullptr; //try again
     }
 
     //extract the IP address from the LOCATION Field
-    indexEnd = findInString(":", RecvBuf, indexStart + 17);
-    if (indexEnd < 0)
+    indexEnd = str.find(":", indexStart + 17);
+    if (indexStart == std::string::npos)
     {
-        // couldn't find the : in the response.
+        // couldn't parse the location field in the response.
         return nullptr; //try again
     }
 
     fieldSize = indexEnd - (indexStart + 17);
 
     field = new char[fieldSize +1] {0};
+
     strncpy(field, RecvBuf + indexStart + 17, fieldSize);
 
     if (strcmp(response_address, field))
@@ -178,15 +179,21 @@ char* gatewayAddress(void)
     gateway = response_address;
 
     // print the type of server
-    indexStart = findInString("SERVER: ", RecvBuf, 0);
-    indexEnd = findInString("\r\n", RecvBuf, indexStart);
+    indexStart = str.find("SERVER: ");
+    if (indexStart != std::string::npos)
+    {
+        indexEnd = str.find("\r\n", indexStart);
 
-    fieldSize = indexEnd - (indexStart + 8);
-    field = new char[fieldSize + 1] {0};
-    strncpy(field, RecvBuf + indexStart + 8, fieldSize);
+        fieldSize = indexEnd - (indexStart + 8);
+        field = new char[fieldSize + 1] {0};
 
-    printf("Gateway device: %s\n", field);
-    delete[] field;
+        strncpy(field, RecvBuf + indexStart + 8, fieldSize);
+
+        printf("Gateway device: %s\n", field);
+        delete[] field;
+    }
+
+
     field = nullptr;
 
     close(ssdp_sock);
